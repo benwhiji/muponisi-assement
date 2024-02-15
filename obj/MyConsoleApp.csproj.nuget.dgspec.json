@@ -1,17 +1,17 @@
 {
   "format": 1,
   "restore": {
-    "c:\\Users\\benwh\\OneDrive\\Desktop\\MyConsoleApp\\MyConsoleApp.csproj": {}
+    "e:\\Assesment\\MyConsoleApp.csproj": {}
   },
   "projects": {
-    "c:\\Users\\benwh\\OneDrive\\Desktop\\MyConsoleApp\\MyConsoleApp.csproj": {
+    "e:\\Assesment\\MyConsoleApp.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "c:\\Users\\benwh\\OneDrive\\Desktop\\MyConsoleApp\\MyConsoleApp.csproj",
+        "projectUniqueName": "e:\\Assesment\\MyConsoleApp.csproj",
         "projectName": "MyConsoleApp",
-        "projectPath": "c:\\Users\\benwh\\OneDrive\\Desktop\\MyConsoleApp\\MyConsoleApp.csproj",
+        "projectPath": "e:\\Assesment\\MyConsoleApp.csproj",
         "packagesPath": "C:\\Users\\benwh\\.nuget\\packages\\",
-        "outputPath": "c:\\Users\\benwh\\OneDrive\\Desktop\\MyConsoleApp\\obj\\",
+        "outputPath": "e:\\Assesment\\obj\\",
         "projectStyle": "PackageReference",
         "configFilePaths": [
           "C:\\Users\\benwh\\AppData\\Roaming\\NuGet\\NuGet.Config"

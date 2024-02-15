@@ -1,127 +1,82 @@
-﻿namespace TechTest1
+﻿﻿using System.Security.Cryptography;
+
+namespace ClosestVehicles;
+
+internal static class Program
 {
-    using System;
-    using System.Collections.Generic;
-    using System.IO;
-    using System.Linq;
-    using System.Text;
 
-    internal class Program
+    
+    
+    public static void Main(string[] args)
     {
-        private static void Main(string[] args)
+        MemoryStream memoryStream = new MemoryStream(File.ReadAllBytes("VehiclePositions.dat"));
+        using (BinaryReader fileReader = new BinaryReader(memoryStream))
         {
-            var records = new List<Record>();
-            
-            List<CordinateModel> fixedCordinates = new List<CordinateModel>();
-            fixedCordinates.Add(new CordinateModel { Position = 1, X = 34.544909f, Y = -102.100843f });
-            fixedCordinates.Add(new CordinateModel { Position = 2, X = 32.345544f, Y = -99.123124f });
-            fixedCordinates.Add(new CordinateModel { Position = 3, X = 33.234235f, Y = -100.214124f });
-            fixedCordinates.Add(new CordinateModel { Position = 4, X = 35.195739f, Y = -95.348899f });
-            fixedCordinates.Add(new CordinateModel { Position = 5, X = 31.895839f, Y = -97.789573f });
-            fixedCordinates.Add(new CordinateModel { Position = 6, X = 32.895839f, Y = -101.789573f });
-            fixedCordinates.Add(new CordinateModel { Position = 7, X = 34.115839f, Y = -100.225732f });
-            fixedCordinates.Add(new CordinateModel { Position = 8, X = 32.335839f, Y = -99.992232f });
-            fixedCordinates.Add(new CordinateModel { Position = 9, X = 33.535339f, Y = -94.792232f });
-            fixedCordinates.Add(new CordinateModel { Position = 10, X = 32.234235f, Y = -100.222222f });
 
-            
-            using (var stream = new FileStream("VehiclePositions.dat", FileMode.Open, FileAccess.Read))
+
+
+            int ID;
+            string Regnumber;
+            float Langitude;
+            float Latitude;
+            long Recordedtime;
+
+            var vehicles = new List<Vehicle>();
+            //loop through the data and create a vehicle object for each row
+            while (fileReader.BaseStream.Position != fileReader.BaseStream.Length)
             {
-                using (var reader = new BinaryReader(stream, Encoding.Default))
-                {
-                
-                    while (reader.BaseStream.Position != reader.BaseStream.Length)
-                    {
-                        
-                        var record = new Record
-                        {
-                            Int32Field = reader.ReadInt32(),
-                            StringField = ReadNullTerminatedString(reader),
-                            X = reader.ReadSingle(),
-                            Y = reader.ReadSingle(),
-                            
-                            DateTimeField = DateTimeOffset.FromUnixTimeSeconds((long)reader.ReadUInt64()).DateTime
-                        };
+                ID = fileReader.ReadInt32();
+                Regnumber = ReadNullTerminatedString(fileReader);
+                Langitude = fileReader.ReadSingle();
+                Latitude = fileReader.ReadSingle();
+                Recordedtime = fileReader.ReadInt64();
+                vehicles.Add(new Vehicle(ID, Regnumber, Langitude, Latitude, Recordedtime));
 
-                        records.Add(record);
-                    }
+            }
+
+            var positions = new List<Position>();
+
+            positions.Add(new Position("Pos 1", 34.544909f, -102.100843f));
+            positions.Add(new Position("Pos 2", 32.345544f, -99.123124f));
+            positions.Add(new Position("Pos 3", 33.234235f, -100.214124f));
+            positions.Add(new Position("Pos 4", 35.195739f, -95.348899f));
+            positions.Add(new Position("Pos 5", 31.895839f, -97.789573f));
+            positions.Add(new Position("Pos 6", 32.895839f, -101.789573f));
+            positions.Add(new Position("Pos 7", 34.115839f, -100.225732f));
+            positions.Add(new Position("Pos 8", 32.335839f, -99.992232f));
+            positions.Add(new Position("Pos 9", 33.535339f, -94.792232f));
+            positions.Add(new Position("Pos 10", 32.234235f, -100.222222f));
+            DateTime now = DateTime.Now;
+            
+            foreach (var position in positions)
+            {
+                foreach (var vehicle in vehicles)
+                {
+                    vehicle.SetDistance(position.Langitude, position.Latitude);
                 }
+                var closestVehicles = vehicles.OrderBy(v => v.Distance).Take(10);
+                Console.WriteLine("Closest vehicles to " + position.Name );
+                  Console.WriteLine("REGNUMBER Distance recordtime ");
+                foreach (var vehicle in closestVehicles)
+                {
+                    Console.WriteLine(vehicle.Regnumber + " " + vehicle.Distance  + " " + vehicle.Recordedtime);
+                }
+                Console.WriteLine();
             }
             
-            foreach (var item in fixedCordinates)
-            {
-                
-                var nearestRecords = records.OrderBy(r => Distance(r, item)).Take(1).ToList();
-                Console.WriteLine();
-
-                Console.WriteLine(item.Position + " Nearest Records");
-                Console.WriteLine();
-            
-                Console.WriteLine("{0,-10} {1,-30} {2,-15} {3,-15} {4,-30} {5,-30}", "VehicleID", "Registration", "Longitude", "Latitude", "Recorded Time UTC", "Dis from Target");
-                Console.WriteLine(new string('-', 110)); 
-
-                foreach (var record in nearestRecords)
-                {
-                    Console.WriteLine("{0,-10} {1,-30} {2,-15} {3,-15} {4,-30} {5,-30}",
-
-                        record.Int32Field,
-                        record.StringField,
-                        record.X,
-                        record.Y,
-                        record.DateTimeField,
-                        Math.Round(Distance(record, item), 0) + " meters");
-                }
+             
+                Console.WriteLine($"Time taken: {DateTime.Now - now}");
             }
-        }
-
-      
-        private static string ReadNullTerminatedString(BinaryReader reader)
-        {
-            var bytes = new List<byte>();
-            byte b;
-            while ((b = reader.ReadByte()) != 0)
-                bytes.Add(b);
-            return Encoding.Default.GetString(bytes.ToArray());
-        }
-
         
-        private static double Distance(Record record, dynamic fixedCoordinate)
-        {
-            var R = 6371e3;
-            var lat1 = DegreesToRadians(record.X);
-            var lat2 = DegreesToRadians(fixedCoordinate.X);
-            var deltaLat = DegreesToRadians(fixedCoordinate.X - record.X);
-            var deltaLon = DegreesToRadians(fixedCoordinate.Y - record.Y);
-
-            var a = Math.Sin(deltaLat / 2) * Math.Sin(deltaLat / 2) +
-                    Math.Cos(lat1) * Math.Cos(lat2) *
-                    Math.Sin(deltaLon / 2) * Math.Sin(deltaLon / 2);
-
-            var c = 2 * Math.Atan2(Math.Sqrt(a), Math.Sqrt(1 - a));
-
-            return R * c; // in metres
-        }
-
-        private static double DegreesToRadians(double degrees)
-        {
-            return degrees * (Math.PI / 180);
-        }
     }
 
-    public class Record
+    public static string ReadNullTerminatedString(this System.IO.BinaryReader stream)
     {
-        public int Int32Field { get; set; }
-        public string StringField { get; set; }
-        public float X { get; set; }
-        public float Y { get; set; }
-        public DateTime DateTimeField { get; set; }
-        public UInt64 TimeStamp { get; set; }
+        string str = "";
+        char ch;
+        while ((int)(ch = stream.ReadChar()) != 0)
+            str = str + ch;
+        return str;
     }
 
-    public class CordinateModel
-    {
-        public int Position { get; set; }
-        public float X { get; set; }
-        public float Y { get; set; }
-    }
 }
